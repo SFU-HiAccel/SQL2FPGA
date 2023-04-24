@@ -48,6 +48,7 @@ Now you have compeletd the entire tool flow of SQL2FPGA. Hack the code and have 
 
 ## Authors and Contributors
 SQL2FPGA is currently maintained by [Alec Lu](http://www.sfu.ca/~fla30/).
+
 Besides, we thank AMD-Xilinx Vitis DB team, Prof. Jiannan Wang and Dr. Jinglin Peng from Simon Fraser University, for their insightful discussion and technical support.
 
 ## Papers
