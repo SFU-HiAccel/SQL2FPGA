@@ -49,13 +49,14 @@ git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
         make
         ./dbgen -s <##> 
         ```
-    * Specifiy Query Configurations
+    * Specifiy Query Configurations (in `SQL2FPGA_Top.scala`)
         * Specify Dataset File Path
-        [...]
+            * Modify `INPUT_DIR_TPCH` and `OUTPUT_DIR_TPCH` with the generated TPC-H dataset
         * Query Specifications
-        [...]
+            * Modify `qConfig.tpch_queryNum_start` and `qConfig.tpch_queryNum_end` to specifiy the range of queries to generate code
         * Execution Mode
-        [...]
+            * `qConfig.pure_sw_mode = 0` specifies whether all operators are executed on CPU and `qConfig.pure_sw_mode = 1` indicates a hybrid execution mode where both CPU and FPGA accelerators are used for execution 
+            * `qConfig.scale_factor = 1` specifies the scale factor (SF)
     * Output:
        * CPU Host Code:
        * FPGA Configuration Code:
