@@ -12,15 +12,17 @@ If you find this project useful in your research, please consider citing:
     }
 
 ## Download SQL2FPGA
-        git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
+```
+git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
+```
 
 ## Environmental Setup
 1. **Hardware platforms (evaluated):**
     * **Host CPU:**
       * 64-bit Ubuntu 18.04.2 LTS
-    * **FPGA Accelerator Design:
+    * **FPGA Accelerator Design:**
       * [Xilinx Database Library 2020.1](https://github.com/Xilinx/Vitis_Libraries/tree/2020.1/database)
-    * **Cloud FPGA:**
+    * **FPGA:**
       * Xilinx Alveo U280
 
 2. **Software tools (evaluated):**
@@ -32,17 +34,58 @@ If you find this project useful in your research, please consider citing:
 
 ## Accelerate SQL Query Processing using SQL2FPGA
 1. Import SQL2FPGA Project using IntelliJ
+    * Open project ...
+    * Select `pom.xml` project file
+    * Run `SQL2FPGA_Top`
+
 2. Run SQL2FPGA Project on TPC-H Dataset
-    * Dataset File Path
-    * Query Specifications
-    * Execution Mode
+    * Download TPC-H Benchmark Generator
+        ```
+        https://github.com/electrum/tpch-dbgen.git
+        ```
+    * Generate TPC-H Dataset (our evaluation covers SF1 and SF30)
+        ```
+        cd tpch-dbgen/
+        make
+        ./dbgen -s <##> 
+        ```
+    * Specifiy Query Configurations
+        * Specify Dataset File Path
+        [...]
+        * Query Specifications
+        [...]
+        * Execution Mode
+        [...]
     * Output:
        * CPU Host Code:
        * FPGA Configuration Code:
        * SW Operator Function Code: 
-3. Deploy Generated Design on Device
-    * Move generated code to ``
-    * Run:
+
+3. Build AMD-Xilinx's Database Accelerator Overlay Designs
+    * Clone AMD-Xilinx's Vitis Libraries: 
+        ```
+        git clone https://github.com/Xilinx/Vitis_Libraries.git
+        ```
+    * Switch to the `2020.1` branch
+        ```
+        cd Vitis_Libraries
+        git checkout 2020.1
+        ```
+    * Build gqeJoin and gqeAggr accelerator overlay designs (this will take more than 10 hours to finish)
+        ```
+        cd database/L2/demo
+        make -C build_join_partition/ xclbin DEVICE=xilinx_u280_xdma_201920_3
+        make -C build_aggr_partition/ xclbin DEVICE=xilinx_u280_xdma_201920_3
+        ```
+        
+4. Run SQL2FPGA-generated Designs on Device
+    * Replace `makefile` at `/Vitis_Libraries/database/L2/demos` with the  `<$SQL2FPGA_HOME>/makefile`
+    * Move SQL2FPGA generated code to `/Vitis_Libraries/database/L2/demos/host/q##/sfalec_fpga`
+    * Compile and execute the design at `/Vitis_Libraries/database/L2/demos`
+        ```
+        make clean
+        make run TARGET=hw MODE=FPGA TB=Q## DEVICE=xilinx_u280_xdma_201920_3 TEST=ALEC
+        ```
 
 Now you have compeletd the entire tool flow of SQL2FPGA. Hack the code and have fun!
 
