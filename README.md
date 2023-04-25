@@ -58,9 +58,9 @@ git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
             * `qConfig.pure_sw_mode = 0` specifies whether all operators are executed on CPU and `qConfig.pure_sw_mode = 1` indicates a hybrid execution mode where both CPU and FPGA accelerators are used for execution 
             * `qConfig.scale_factor = 1` specifies the scale factor (SF)
     * Output:
-       * CPU Host Code:
-       * FPGA Configuration Code:
-       * SW Operator Function Code: 
+       * CPU Host Code: `test_q##.cpp` 
+       * FPGA Configuration Code: `cfgFunc_q##.hpp`
+       * SW Operator Function Code: `q##.hpp`
 
 3. Build AMD-Xilinx's Database Accelerator Overlay Designs
     * Clone AMD-Xilinx's Vitis Libraries: 
