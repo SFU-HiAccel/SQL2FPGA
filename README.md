@@ -36,7 +36,7 @@ git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
 1. Import SQL2FPGA Project using IntelliJ
     * Open project ...
     * Select `pom.xml` project file
-    * Run `SQL2FPGA_Top`
+    * Build module `SQL2FPGA_Top`
 
 2. Run SQL2FPGA Project on TPC-H Dataset
     * Download TPC-H Benchmark Generator
@@ -57,6 +57,8 @@ git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
         * Execution Mode
             * `qConfig.pure_sw_mode = 0` specifies whether all operators are executed on CPU and `qConfig.pure_sw_mode = 1` indicates a hybrid execution mode where both CPU and FPGA accelerators are used for execution 
             * `qConfig.scale_factor = 1` specifies the scale factor (SF)
+    * Build and Run SQL2FPGA Module
+       * Build and run module `SQL2FPGA_Top`
     * Output:
        * CPU Host Code: `test_q##.cpp` 
        * FPGA Configuration Code: `cfgFunc_q##.hpp`
