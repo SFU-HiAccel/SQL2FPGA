@@ -34,6 +34,7 @@ git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
 
 ## Accelerate SQL Query Processing using SQL2FPGA
 1. Import SQL2FPGA Project using IntelliJ
+    * Install `Scala` plugin
     * Open project ...
     * Select `pom.xml` project file
     * Build module `SQL2FPGA_Top`
