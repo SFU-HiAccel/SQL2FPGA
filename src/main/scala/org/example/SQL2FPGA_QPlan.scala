@@ -497,8 +497,8 @@ class SQL2FPGA_QPlan {
   }
 
   def getNonGroupByAggregateOperator(thisNode: SQL2FPGA_QPlan): SQL2FPGA_QPlan={
-    // if (thisNode._nodeType == "AGGREGATE" && thisNode._groupBy_operation.isEmpty) {
-    if ((thisNode._nodeType == "AGGREGATE" && thisNode._groupBy_operation.isEmpty) || thisNode._nodeType == "PROJECT") {
+    // if (thisNode._nodeType == "Aggregate" && thisNode._groupBy_operation.isEmpty) {
+    if ((thisNode._nodeType == "Aggregate" && thisNode._groupBy_operation.isEmpty) || thisNode._nodeType == "Project") {
       return thisNode
     }
 
@@ -511,7 +511,7 @@ class SQL2FPGA_QPlan {
   }
 
   def getFilterOperator(thisNode: SQL2FPGA_QPlan): SQL2FPGA_QPlan={
-    if (thisNode._nodeType == "FILTER") {
+    if (thisNode._nodeType == "Filter") {
       return thisNode
     }
 
@@ -524,7 +524,7 @@ class SQL2FPGA_QPlan {
   }
 
   def getGroupByAggregateOperator(thisNode: SQL2FPGA_QPlan): SQL2FPGA_QPlan={
-    if (thisNode._nodeType == "AGGREGATE" && thisNode._groupBy_operation.nonEmpty) {
+    if (thisNode._nodeType == "Aggregate" && thisNode._groupBy_operation.nonEmpty) {
       return thisNode
     }
 
@@ -4147,7 +4147,7 @@ class SQL2FPGA_QPlan {
     if (fpgaOverlayCompatible) {
       this._fpgaOverlayType = 0 //default as gqe-join
       this._nodeType match {
-        case "FILTER" =>
+        case "Filter" =>
           _fpgaJoinOverlayPipelineDepth = 1
           _fpgaAggrOverlayPipelineDepth = 2
         case "JOIN_INNER" =>
@@ -4162,7 +4162,7 @@ class SQL2FPGA_QPlan {
         case "JOIN_LEFTOUTER" =>
           _fpgaJoinOverlayPipelineDepth = 2
           _fpgaAggrOverlayPipelineDepth = -1
-        case "AGGREGATE" =>
+        case "Aggregate" =>
           if (this._groupBy_operation.nonEmpty) {
             _fpgaOverlayType = 1 //switch to gqe-aggr
             _fpgaJoinOverlayPipelineDepth = -1
@@ -4183,7 +4183,7 @@ class SQL2FPGA_QPlan {
               _fpgaAggrOverlayPipelineDepth = 1
             }
           }
-        case "PROJECT" =>
+        case "Project" =>
           // fused
           //            _fpgaJoinOverlayPipelineDepth = 3
           //            _fpgaAggrOverlayPipelineDepth = 1
@@ -4427,14 +4427,14 @@ class SQL2FPGA_QPlan {
               }
             }
           }
-          else if (this_node._nodeType == "FILTER") {
+          else if (this_node._nodeType == "Filter") {
             for (col <- this_node._filtering_expression.references) {
               if (getColumnType(col.toString, dfmap) == "StringType") {
                 operationContainStringType = true
               }
             }
           }
-          else if (this_node._nodeType == "AGGREGATE" || this_node._nodeType == "PROJECT") {
+          else if (this_node._nodeType == "Aggregate" || this_node._nodeType == "Project") {
             for (aggr_expr <- this_node._aggregate_expression) {
               for (col <- aggr_expr.references) {
                 if (getColumnType(col.toString, dfmap) == "StringType") {
@@ -4449,7 +4449,7 @@ class SQL2FPGA_QPlan {
               }
             }
           }
-          else if (this_node._nodeType == "SORT") {
+          else if (this_node._nodeType == "Sort") {
             //FIXME: always not avaliable for joining
             operationContainStringType = true
           }
@@ -4512,7 +4512,7 @@ class SQL2FPGA_QPlan {
 
   def stringRowIDSubstitution_rescan(dfmap: Map[String, DataFrame], pure_sw_mode: Int): Unit ={
     // end case
-    if (this._nodeType == "FILTER") {
+    if (this._nodeType == "Filter") {
       if (this._parent.nonEmpty) {
         if (this._parent.head._stringRowIDSubstitution == true && this._stringRowIDSubstitution == false) {
           this._stringRowIDSubstitution = true
@@ -4586,7 +4586,7 @@ class SQL2FPGA_QPlan {
       if (join_filter_pairs.length == 0) { // supports join without filtering
         result_length = currentMaxLength + 1
         result_expr ++= thisNode._joining_expression
-        if (thisNode._children.head._nodeType == "FILTER" || thisNode._children.last._nodeType == "FILTER") {
+        if (thisNode._children.head._nodeType == "Filter" || thisNode._children.last._nodeType == "Filter") {
           result_filter += "true"
         } else {
           result_filter += "false"
@@ -4818,7 +4818,7 @@ class SQL2FPGA_QPlan {
 
       // find the filterJoinNodeIdx-th join node with a filter child
       for (join_node <- joinNodeList) {
-        if (nthFilterNode < filterJoinNodeIdx && (join_node._children.head._nodeType == "FILTER" || join_node._children.last._nodeType == "FILTER")) {
+        if (nthFilterNode < filterJoinNodeIdx && (join_node._children.head._nodeType == "Filter" || join_node._children.last._nodeType == "Filter")) {
           nthFilterNode += 1
           nthFilterNodeIdx = joinNodeList.indexOf(join_node)
         }
@@ -4846,7 +4846,7 @@ class SQL2FPGA_QPlan {
       for ( ref <- joinNodeList(nthFilterNodeIdx)._joining_expression.head.references) {
         var fromFilterNode = false
         for (ch <- joinNodeList(nthFilterNodeIdx)._children) {
-          if (ch._nodeType == "FILTER" && ch._outputCols.contains(ref.toString)) {
+          if (ch._nodeType == "Filter" && ch._outputCols.contains(ref.toString)) {
             fromFilterNode = true
           }
         }
@@ -5170,7 +5170,7 @@ class SQL2FPGA_QPlan {
         var this_node = q_node.dequeue()
         println(this_node._nodeType)
 
-        if (this_node._nodeType == "FILTER") {
+        if (this_node._nodeType == "Filter") {
           var onlyContainsIsNotNull = isAllFilterClausesIsNotNull(this_node._filtering_expression)
           var idx_this_node = -1
           if (this_node._parent.nonEmpty) {
@@ -5187,7 +5187,7 @@ class SQL2FPGA_QPlan {
           }
         }
 
-        if (this_node._nodeType == "PROJECT") {
+        if (this_node._nodeType == "Project") {
           //TODO: add logic to remove pass-through/pure-alising 'project'
           var onlyContainsAliasProjection = true
           for (aggr_expr <- this_node._aggregate_expression) {
@@ -5333,7 +5333,7 @@ class SQL2FPGA_QPlan {
         var this_node = q_node.dequeue()
         //isolated single "filter" node - much faster done on CPU
         if (this_node._cpuORfpga == 1) {
-          if (this_node._nodeType == "FILTER") {
+          if (this_node._nodeType == "Filter") {
             if (this_node._bindedOverlayInstances.isEmpty) {
               this_node._cpuORfpga = 0
             }
@@ -5445,7 +5445,7 @@ class SQL2FPGA_QPlan {
           // if the number output columns is more than 8, execute this node on CPU
           if (this_node._outputCols.length > 8) {
             // below was to enforce 8 output columns
-            var isGroupByOp = this_node._nodeType == "AGGREGATE" && this_node._groupBy_operation.nonEmpty
+            var isGroupByOp = this_node._nodeType == "Aggregate" && this_node._groupBy_operation.nonEmpty
             if (!isGroupByOp) {
               cpuORfpgaExecution = 0
             }
@@ -5466,7 +5466,7 @@ class SQL2FPGA_QPlan {
             }
           }
           // if filter op and any input col that needs filtering is not in the first 4 cols
-          if (this_node._nodeType == "FILTER") {
+          if (this_node._nodeType == "Filter") {
             var clauseCount = getNumberofFilterClause(this_node._filtering_expression)
             var clauseReferenceCount = this_node._filtering_expression.references.size
             var clauseCountExceedLimit = clauseCount > 4 && clauseReferenceCount > 4
@@ -5539,11 +5539,11 @@ class SQL2FPGA_QPlan {
             //                }
             //              }
           }
-          // if (this_node._nodeType == "SORT" || this_node._nodeType == "PROJECT") {
-          if (this_node._nodeType == "SORT") {
+          // if (this_node._nodeType == "Sort" || this_node._nodeType == "Project") {
+          if (this_node._nodeType == "Sort") {
             cpuORfpgaExecution = 0
           }
-          if (this_node._nodeType == "AGGREGATE") {
+          if (this_node._nodeType == "Aggregate") {
             // check all aggregation operation is supported
             var num_evaluation_expr = 0
             for (aggr_expr <- _aggregate_expression) {
@@ -5738,9 +5738,9 @@ class SQL2FPGA_QPlan {
       _numTableRow = 150000
     } else if (_nodeType.contains("JOIN") && _treeDepth == 2 && queryNum == 3 && _cpuORfpga == 1) {
       _numTableRow = 30000
-    } else if (_nodeType.contains("AGGREGATE") && _treeDepth == 1 && queryNum == 3 && _cpuORfpga == 1) {
+    } else if (_nodeType.contains("Aggregate") && _treeDepth == 1 && queryNum == 3 && _cpuORfpga == 1) {
       _numTableRow = 24000
-    } else if (_nodeType.contains("AGGREGATE") && _treeDepth == 1 && queryNum == 1 && _cpuORfpga == 1) {
+    } else if (_nodeType.contains("Aggregate") && _treeDepth == 1 && queryNum == 1 && _cpuORfpga == 1) {
       _numTableRow = 10
     }
 
@@ -6055,7 +6055,7 @@ class SQL2FPGA_QPlan {
       }
     }
     //-----------------------------------PRE-PROCESSING-----------------------------------------------
-    if (_nodeType == "AGGREGATE" || _nodeType == "PROJECT") {
+    if (_nodeType == "Aggregate" || _nodeType == "Project") {
       for (groupBy_payload <- _aggregate_expression) {
         var col_symbol = groupBy_payload.toString.split(" AS ").last
         var col_type = groupBy_payload.dataType.toString
@@ -6108,7 +6108,7 @@ class SQL2FPGA_QPlan {
             //              // table order swapping based on number of rows to reduce hashmap creation size
             //              if (join_operator._nodeType == "JOIN_INNER") {
             //                if ((leftmost_operator._children.head._nodeType == "SERIALIZE_FROM_OBJECT" && leftmost_operator._children.head._numTableRow >= 150000 && rightmost_operator._children.last._nodeType != "SERIALIZE_FROM_OBJECT") ||
-            //                  (leftmost_operator._children.head._nodeType.contains("JOIN") && rightmost_operator._children.last._nodeType == "FILTER") ||
+            //                  (leftmost_operator._children.head._nodeType.contains("JOIN") && rightmost_operator._children.last._nodeType == "Filter") ||
             //                  (rightmost_operator._children.last._nodeType == "SERIALIZE_FROM_OBJECT" && rightmost_operator._children.last._numTableRow < 150000) ||
             //                  largerLeftTbl) {
             //                  var temp_operator = rightmost_operator
@@ -6468,7 +6468,7 @@ class SQL2FPGA_QPlan {
           }
           else {
             var idx = 0
-            if (this._nodeType == "FILTER") {
+            if (this._nodeType == "Filter") {
               //shuffle filtering output cols here
               var temp_col_idx_dict_prev = collection.mutable.Map[String, Int]()
               var temp_idx_col_dict_prev = collection.mutable.Map[Int, String]()
@@ -6486,7 +6486,7 @@ class SQL2FPGA_QPlan {
               a_col_idx_dict_prev = temp_col_idx_dict_prev
               a_idx_col_dict_prev = temp_idx_col_dict_prev
             }
-            else if (this._nodeType == "AGGREGATE") {
+            else if (this._nodeType == "Aggregate") {
               //shuffle aggregation reference cols here
               var temp_col_idx_dict_prev = collection.mutable.Map[String, Int]()
               var temp_idx_col_dict_prev = collection.mutable.Map[Int, String]()
@@ -6730,7 +6730,7 @@ class SQL2FPGA_QPlan {
                 ALUOPCompiler += "op_eval_0);"
                 eval0_func_call = ALUOPCompiler
               }
-              if (aggr_operator._nodeType == "PROJECT") {
+              if (aggr_operator._nodeType == "Project") {
                 for (o_col <- _outputCols) {
                   if (!col_idx_dict_next.contains(o_col) && col_idx_dict_prev.contains(o_col)) {
                     col_idx_dict_next += (o_col -> start_idx)
@@ -8021,7 +8021,7 @@ class SQL2FPGA_QPlan {
           cfgFuncCode += "    t.set_bit(2, 0); // dual-key - not sure what this does, yet" + "\n"
 
           _nodeType match {
-            case "FILTER" =>
+            case "Filter" =>
               //              enum FilterOp {
               //                FOP_EQ,     ///< equal
               //                FOP_DC = 0, ///< don't care, always true.
@@ -8913,7 +8913,7 @@ class SQL2FPGA_QPlan {
             _fpgaSWFuncCode += "        }"
             _fpgaSWFuncCode += "    }"
             _fpgaSWFuncCode += "    " + tbl_out_1 + ".setNumRow(r);"
-          case "FILTER" =>
+          case "Filter" =>
             // tag:filter
             var tempStr = "void " + _fpgaSWFuncName + "("
             for (ch <- _children) {
@@ -9013,7 +9013,7 @@ class SQL2FPGA_QPlan {
             _fpgaSWFuncCode += "        }"
             _fpgaSWFuncCode += "    }"
             _fpgaSWFuncCode += "    " + tbl_out_1 + ".setNumRow(r);"
-          case "AGGREGATE" =>
+          case "Aggregate" =>
             // tag:aggregate
             println("------Aggregate Terms: ")
             println(_operation)
@@ -9821,7 +9821,7 @@ class SQL2FPGA_QPlan {
               }
             }
             _fpgaSWFuncCode += "    " + tbl_out_1 + ".setNumRow(r);"
-          case "PROJECT" =>
+          case "Project" =>
             // tag:project
             println("------Project Terms: ")
             println(_operation)
@@ -9951,7 +9951,7 @@ class SQL2FPGA_QPlan {
             }
             _fpgaSWFuncCode += "    }"
             _fpgaSWFuncCode += "    " + tbl_out_1 + ".setNumRow(nrow1);"
-          case "SORT" =>
+          case "Sort" =>
             // tag:sort
             var tempStr = "void " + _fpgaSWFuncName + "("
             for (ch <- _children){
@@ -10141,7 +10141,7 @@ class SQL2FPGA_QPlan {
       }
     }
     //-----------------------------------POST-PROCESSING----------------------------------------------
-    if (_nodeType == "AGGREGATE" || _nodeType == "PROJECT") {
+    if (_nodeType == "Aggregate" || _nodeType == "Project") {
       var groupByExists = false
       if (_groupBy_operation.length > 0) {
         groupByExists = true

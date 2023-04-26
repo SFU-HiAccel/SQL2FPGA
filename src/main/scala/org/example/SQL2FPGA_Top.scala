@@ -12,7 +12,7 @@ object SQL2FPGA_Top{
   val OUTPUT_DIR_TPCDS = "/Users/aleclu/dev/tpcds-spark/dbgen/tpcds_data_1"
   qConfig.tpch_queryNum_start = 15
   qConfig.tpch_queryNum_end = 22
-  qConfig.tpch_queryNum_list = ListBuffer(1) // 3, 13, 15, 18, 20
+  qConfig.tpch_queryNum_list = ListBuffer(13) // 3, 13, 15, 18, 20
   qConfig.tpcds_queryNum_start = 1
   qConfig.tpcds_queryNum_end = 22
   qConfig.tpcds_queryNum_list = ListBuffer(1) // 1, 2, 3, 5, 6, 7, 8, 9
