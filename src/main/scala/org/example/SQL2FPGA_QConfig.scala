@@ -16,6 +16,7 @@ class SQL2FPGA_QConfig{
   private var _pure_sw_mode: Int = 0
   private var _scale_factor: Int = 0
   private var _num_spark_execution: Int = 1
+  private var _query_plan_optimization_enable: String = "00000" // 5 digit for 5 optimizations
   // getters
   def tpch_queryNum_start = _tpch_queryNum_start
   def tpch_queryNum_end = _tpch_queryNum_end
@@ -27,6 +28,7 @@ class SQL2FPGA_QConfig{
   def pure_sw_mode = _pure_sw_mode
   def scale_factor = _scale_factor
   def num_spark_execution = _num_spark_execution
+  def query_plan_optimization_enable = _query_plan_optimization_enable
   // setters
   def tpch_queryNum_start_= (newValue: Int): Unit = {
     _tpch_queryNum_start = newValue
@@ -57,6 +59,9 @@ class SQL2FPGA_QConfig{
   }
   def num_spark_execution_= (newValue: Int): Unit = {
     _num_spark_execution = newValue
+  }
+  def query_plan_optimization_enable_= (newValue: String): Unit = {
+    _query_plan_optimization_enable = newValue
   }
 }
 
