@@ -624,14 +624,14 @@ class SQL2FPGA_Codegen {
   }
   def writeHostCode_wrapper_bottom(bw: BufferedWriter, goldenOutput: ListBuffer[String]): Unit ={
     bw.write("    std::cout << std::endl << \" Spark elapsed time: \" << " + goldenOutput.last + " * 1000 << \"ms\" << std::endl; \n")
-    bw.write("    std::cout << \" Spark Output (first 5 of " + (goldenOutput.length - 1).toString  + " lines)\" << std::endl; \n")
-    var idx = 0
-    for (line <- goldenOutput) {
-      if (idx < 5) {
-        bw.write("    std::cout << \"" + line + "\" << std::endl; \n")
-      }
-      idx += 1
-    }
+//    bw.write("    std::cout << \" Spark Output (first 5 of " + (goldenOutput.length - 1).toString  + " lines)\" << std::endl; \n")
+//    var idx = 0
+//    for (line <- goldenOutput) {
+//      if (idx < 5) {
+//        bw.write("    std::cout << \"" + line + "\" << std::endl; \n")
+//      }
+//      idx += 1
+//    }
     bw.write("    return 0; \n")
     bw.write("}\n")
   }

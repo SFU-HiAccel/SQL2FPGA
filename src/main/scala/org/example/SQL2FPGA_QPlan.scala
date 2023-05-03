@@ -3597,7 +3597,7 @@ class SQL2FPGA_QPlan {
     coreCode += "    std::unordered_multimap<" + joinKeyTypeName + ", " + joinPayloadTypeName + "> ht1;"
     // Enumerate input table
     var left_tbl_partition_suffix = ""
-    if (sf == 30 && left_child._cpuORfpga == 1 && left_child._nodeType != "SERIALIZE_FROM_OBJECT") {
+    if (sf == 30 && left_child._cpuORfpga == 1 && left_child._nodeType != "SerializeFromObject") {
       coreCode += "for (int p_idx = 0; p_idx < hpTimes; p_idx++) {"
       left_tbl_partition_suffix = "[p_idx]"
     }
@@ -3705,14 +3705,14 @@ class SQL2FPGA_QPlan {
     coreCode += "        " + joinPayloadTypeName + " payloadA{" + payload_str.stripSuffix(", ") + "};"
     coreCode += "        ht1.insert(std::make_pair(keyA, payloadA));"
     coreCode += "    }"
-    if (sf == 30 && left_child._cpuORfpga == 1 && left_child._nodeType != "SERIALIZE_FROM_OBJECT") {
+    if (sf == 30 && left_child._cpuORfpga == 1 && left_child._nodeType != "SerializeFromObject") {
       coreCode += "}"
     }
 
     coreCode += "    int r = 0;"
     // Enumerate input table
     var right_tbl_partition_suffix = ""
-    if (sf == 30 && right_child._cpuORfpga == 1 && right_child._nodeType != "SERIALIZE_FROM_OBJECT") {
+    if (sf == 30 && right_child._cpuORfpga == 1 && right_child._nodeType != "SerializeFromObject") {
       coreCode += "for (int p_idx = 0; p_idx < hpTimes; p_idx++) {"
       right_tbl_partition_suffix = "[p_idx]"
     }
@@ -3939,7 +3939,7 @@ class SQL2FPGA_QPlan {
     }
     coreCode += "        }"
     coreCode += "    }"
-    if (sf == 30 && right_child._cpuORfpga == 1 && right_child._nodeType != "SERIALIZE_FROM_OBJECT") {
+    if (sf == 30 && right_child._cpuORfpga == 1 && right_child._nodeType != "SerializeFromObject") {
       coreCode += "}"
     }
     coreCode += "    " + tbl_out_1 + ".setNumRow(r);"
@@ -3951,7 +3951,7 @@ class SQL2FPGA_QPlan {
     var results = new ListBuffer[String]
 
     //prev version - restricted to direct data source to operator relation
-    // if (this_node._nodeType == "SERIALIZE_FROM_OBJECT" && this_node._stringRowIDSubstitution == true) {
+    // if (this_node._nodeType == "SerializeFromObject" && this_node._stringRowIDSubstitution == true) {
     //   results += this_node._fpgaOutputTableName_stringRowIDSubstitute
     //   return results
     // }
@@ -3988,7 +3988,7 @@ class SQL2FPGA_QPlan {
     var results = new ListBuffer[ListBuffer[String]]
 
     //prev version - restricted to direct data source to operator relation
-    // if (this_node._nodeType == "SERIALIZE_FROM_OBJECT" && this_node._stringRowIDSubstitution == true) {
+    // if (this_node._nodeType == "SerializeFromObject" && this_node._stringRowIDSubstitution == true) {
     //   results += this_node._outputCols
     //   return results
     // }
@@ -4055,7 +4055,7 @@ class SQL2FPGA_QPlan {
     for (ch <- _children) {
       ch.printPlan_InOrder(dfmap)
     }
-    //      if (nodeType != "SERIALIZE_FROM_OBJECT") {
+    //      if (nodeType != "SerializeFromObject") {
     if (nodeType != "NULL") {
       print(this.toString.split("\\$").last + " - ")
       print(_treeDepth)
@@ -4123,7 +4123,7 @@ class SQL2FPGA_QPlan {
       var tmp_q = Queue[SQL2FPGA_QPlan]()
       while(!q_node.isEmpty) {
         var this_node = q_node.dequeue()
-        if (this_node._cpuORfpga == 1 && this_node._nodeType != "SERIALIZE_FROM_OBJECT") {
+        if (this_node._cpuORfpga == 1 && this_node._nodeType != "SerializeFromObject") {
           num_overlay_invokes += 1
         }
         for (ch <- this_node._children) {
@@ -4190,7 +4190,7 @@ class SQL2FPGA_QPlan {
           // non-fused
           _fpgaJoinOverlayPipelineDepth = 0
           _fpgaAggrOverlayPipelineDepth = 0
-        // case "SERIALIZE_FROM_OBJECT" =>
+        // case "SerializeFromObject" =>
         case _ =>
           _fpgaJoinOverlayPipelineDepth = 0
           _fpgaAggrOverlayPipelineDepth = 0
@@ -4302,7 +4302,8 @@ class SQL2FPGA_QPlan {
 
   def operatorFusion_binding(overlayID: Int): ListBuffer[SQL2FPGA_QPlan] = {
     var bindedOverlay = new ListBuffer[SQL2FPGA_QPlan]()
-    for (ch <- _children) {
+    var tmp_children_deep_copy = _children.clone()
+    for (ch <- tmp_children_deep_copy) {
       var temp = ch.operatorFusion_binding(this._fpgaOverlayID)
       if (temp.nonEmpty) {
         if (_children.length == 1) { // non-join typed child
@@ -4387,7 +4388,7 @@ class SQL2FPGA_QPlan {
         println(this_node._nodeType)
 
         if (this_node._operation.isEmpty) {
-          if (this_node._nodeType == "SERIALIZE_FROM_OBJECT") {
+          if (this_node._nodeType == "SerializeFromObject") {
             var inputColsContainStringType = false
             for (i_col <- this_node._outputCols) {
               if (getColumnType(i_col, dfmap) == "StringType") {
@@ -4477,7 +4478,7 @@ class SQL2FPGA_QPlan {
 
   def stringRowIDSubstitution_pruning(dfmap: Map[String, DataFrame], pure_sw_mode: Int): Unit ={
     // end case
-    if (this._nodeType == "SERIALIZE_FROM_OBJECT") {
+    if (this._nodeType == "SerializeFromObject") {
       if (this._parent.head._stringRowIDSubstitution == false) {
         this._stringRowIDSubstitution = false
         this._fpgaOutputTableName_stringRowIDSubstitute = "NULL"
@@ -5100,7 +5101,7 @@ class SQL2FPGA_QPlan {
     return true
   }
 
-  def pushDownJoinWithLessNumRows(thisNode: SQL2FPGA_QPlan, dfmap: Map[String, DataFrame], sf: Int): Boolean = {
+  def pushDownJoinWithLessNumRows(thisNode: SQL2FPGA_QPlan, qNum: Int, dfmap: Map[String, DataFrame], sf: Int): Boolean = {
     // analysis
     var newList = new ListBuffer[SQL2FPGA_QPlan]
     var allCascadeJoinChains = getAllCascadeJoinChains(thisNode, newList)
@@ -5122,27 +5123,31 @@ class SQL2FPGA_QPlan {
       }
     }
     // transformation
-    for (cascadeJoinChain <- allCascadeJoinChains_trimmed) {
-      if (cascadeJoinChain.length >= 2) {
-        var valid = joinReordering(cascadeJoinChain.reverse, dfmap, sf)
-        if (valid == false)
-          return false
+    if (qNum != 2) {
+      for (cascadeJoinChain <- allCascadeJoinChains_trimmed) {
+        if (cascadeJoinChain.length >= 2) {
+          var valid = joinReordering(cascadeJoinChain.reverse, dfmap, sf)
+          if (valid == false)
+            return false
+        }
       }
     }
-    //      // temp hack - Alec // join node reordering hack for Q2
-    //      joinReordering(allCascadeJoinChains_trimmed(1).reverse, dfmap, sf)
-    //      var filterNode = getParentsOtherChild(allCascadeJoinChains_trimmed(0).last._parent(0), allCascadeJoinChains_trimmed(0).last)
-    //      var AggrNode = filterNode._children.head
-    //      var joinNode = AggrNode._children.head
-    //      joinNode._outputCols += "ps_suppkey#306"
-    //      allCascadeJoinChains_trimmed(0).last._children(1) = joinNode
-    //      AggrNode._children(0) = allCascadeJoinChains_trimmed(0).last
-    //      allCascadeJoinChains_trimmed(0).last._outputCols += "ps_partkey#305"
+    else {
+      // temp hack - Alec // join node reordering hack for Q2
+      joinReordering(allCascadeJoinChains_trimmed(1).reverse, dfmap, sf)
+      var filterNode = getParentsOtherChild(allCascadeJoinChains_trimmed(0).last._parent(0), allCascadeJoinChains_trimmed(0).last)
+      var AggrNode = filterNode._children.head
+      var joinNode = AggrNode._children.head
+      joinNode._outputCols += "ps_suppkey#306"
+      allCascadeJoinChains_trimmed(0).last._children(1) = joinNode
+      AggrNode._children(0) = allCascadeJoinChains_trimmed(0).last
+      allCascadeJoinChains_trimmed(0).last._outputCols += "ps_partkey#305"
+    }
 
     return true
   }
 
-  def applyCascadedJoinOptTransform(qParser: SQL2FPGA_QParser, qConfig: SQL2FPGA_QConfig, dfmap: Map[String, DataFrame]): Unit = {
+  def applyCascadedJoinOptTransform(qParser: SQL2FPGA_QParser, qNum: Int, qConfig: SQL2FPGA_QConfig, dfmap: Map[String, DataFrame]): Unit = {
     // Opt 1: push down join with filtering child(ren)
     qParser.qPlan.pushDownJoinWithFiltering(qParser.qPlan, dfmap)
     qParser.qPlan_backup.pushDownJoinWithFiltering(qParser.qPlan_backup, dfmap)
@@ -5151,7 +5156,7 @@ class SQL2FPGA_QPlan {
       println(" ")
     }
     // Opt 2: reorder cascaded joins such that tables with lesser num of rows execute first
-    var transformationSuccess = qParser.qPlan.pushDownJoinWithLessNumRows(qParser.qPlan, dfmap, qConfig.scale_factor)
+    var transformationSuccess = qParser.qPlan.pushDownJoinWithLessNumRows(qParser.qPlan, qNum, dfmap, qConfig.scale_factor)
     if (transformationSuccess == false) {
       qParser.qPlan = qParser.qPlan_backup
     }
@@ -5224,7 +5229,7 @@ class SQL2FPGA_QPlan {
     }
   }
 
-  def resetVisitTag(rootNode: SQL2FPGA_QPlan): Unit = {
+  def resetVisitTag_QPlan(rootNode: SQL2FPGA_QPlan): Unit = {
     if (rootNode == null) return
 
     var q_node = Queue[SQL2FPGA_QPlan]()
@@ -5243,15 +5248,15 @@ class SQL2FPGA_QPlan {
     }
   }
 
-  def applyRedundantNodeRemovalOptTransform(qParser: SQL2FPGA_QParser, qConfig: SQL2FPGA_QConfig, dfmap: Map[String, DataFrame]): Unit = {
+  def applyRedundantNodeRemovalOptTransform(qParser: SQL2FPGA_QParser, qNum: Int, qConfig: SQL2FPGA_QConfig, dfmap: Map[String, DataFrame]): Unit = {
     qParser.qPlan.removeInvalidProjectFilter(dfmap, qConfig.pure_sw_mode)
     if (DEBUG_REDUNDANT_OP_OPT) {
       println(" AFTER removeInvalidProjectFilter()")
       qParser.qPlan.printPlan_InOrder(dfmap)
     }
-    qParser.qPlan.allocateOperators(dfmap, qConfig.pure_sw_mode)
+    qParser.qPlan.allocateOperators(qNum, dfmap, qConfig.pure_sw_mode)
     qParser.qPlan.eliminatedRepeatedNode(qParser.qPlan)
-    resetVisitTag(qParser.qPlan)
+    resetVisitTag_QPlan(qParser.qPlan)
     if (DEBUG_REDUNDANT_OP_OPT) {
       println(" AFTER eliminatedRepeatedNode()")
       qParser.qPlan.printPlan_InOrder(dfmap)
@@ -5414,7 +5419,7 @@ class SQL2FPGA_QPlan {
     }
   }
 
-  def allocateOperators(dfmap: Map[String, DataFrame], pure_sw_mode: Int): Unit = {
+  def allocateOperators(qNum: Int, dfmap: Map[String, DataFrame], pure_sw_mode: Int): Unit = {
     println(" ")
     this.printPlan_InOrder(dfmap)
     println(" ")
@@ -5475,7 +5480,7 @@ class SQL2FPGA_QPlan {
             if (clauseCountExceedLimit || !allValidClauses || includeSubQuery) { // overlays only support 4 filtering clauses
               cpuORfpgaExecution = 0
             }
-            //              //FIXME: Alec-added temp test - come back here Alec hack
+            //FIXME: Alec-added temp test - come back here Alec hack
             cpuORfpgaExecution = 0 // disabling filtering during sf30
             if (!this_node._parent.isEmpty && this_node._parent(0)._nodeType.contains("JOIN") ) {
               if (this_node._parent(0)._nodeType != "JOIN_INNER") {
@@ -5501,43 +5506,12 @@ class SQL2FPGA_QPlan {
             if (join_clauses.length > 2 || invalid_join_connect || join_filter_clauses.length != 0) {
               cpuORfpgaExecution = 0
             }
-
-            //              //temp hack - Alec hack - sf30 alternate join to apply gqePart
-            //              if (this_node._treeDepth != 2) {
-            //                cpuORfpgaExecution = 0
-            //              }
-
-            //              //temp hack - Alec hack for Q2
-            //              if (this_node._treeDepth < 5) {
-            //                cpuORfpgaExecution = 0
-            //              }
-            //              //temp hack - Alec hack for Q8
-            //              if (this_node._treeDepth != 6 && this_node._treeDepth != 7 &&
-            //                this_node._treeDepth != 8 && this_node._treeDepth != 9) {
-            //                cpuORfpgaExecution = 0
-            //              }
-            //              //temp hack - Alec hack for Q9
-            //              // if (this_node._treeDepth == 6 || this_node._treeDepth == 3) {
-            //              if (this_node._treeDepth == 3) {
-            //                cpuORfpgaExecution = 0
-            //              }
-            //                //temp hack - Alec hack for Q10
-            //                if (this_node._treeDepth == 2 || this_node._treeDepth == 4) {
-            //                //if (this_node._treeDepth == 2 || this_node._treeDepth == 4) {
-            //                  cpuORfpgaExecution = 0
-            //                }
-            // Alec hack
-            //               cpuORfpgaExecution = 0
-
-            // Alec hack - no opt
-            //              if (this_node._nodeType == "JOIN_LEFTOUTER") {
-            //                cpuORfpgaExecution = 0
-            //              }
-            //              if (this_node._nodeType == "JOIN_LEFTSEMI" || this_node._nodeType == "JOIN_LEFTANTI") {
-            //                if (this_node._isSpecialSemiJoin || this_node._isSpecialAntiJoin) {
-            //                  cpuORfpgaExecution = 0
-            //                }
-            //              }
+            if (qNum == 2) {
+              //temp hack - Alec hack for Q2
+              if (this_node._treeDepth < 5) {
+                cpuORfpgaExecution = 0
+              }
+            }
           }
           // if (this_node._nodeType == "Sort" || this_node._nodeType == "Project") {
           if (this_node._nodeType == "Sort") {
@@ -5572,22 +5546,9 @@ class SQL2FPGA_QPlan {
               // Alec hack - temporaily disabling aggregate offloading to gqejoin
               cpuORfpgaExecution = 0
             }
-            // Alec hack - Q22
-            // Alec-hack - disable gqeAggre kernel temporarily for enabling gqePart kerenl
-            //              cpuORfpgaExecution = 0
-            //              overlay_type = 0
-            //              if (this_node._treeDepth != 2) {
-            //                cpuORfpgaExecution = 0
-            //                overlay_type = 0
-            //              }
             // Alec hack
-            //              cpuORfpgaExecution = 0
+            // cpuORfpgaExecution = 0
           }
-
-          //            //temp hack - Alec for Q11
-          //            if (this_node._treeDepth != 4) {
-          //              cpuORfpgaExecution = 0
-          //            }
         }
         //Alec-added: implement every operation on CPU with set _cpuORfpga as 0
         if (pure_sw_mode == 1) {
@@ -5681,7 +5642,9 @@ class SQL2FPGA_QPlan {
             if (sameNode_basedOnOp == true) {
               var ch_idx = this._parent(0)._children.indexOf(this)
               if (ch_idx != -1) {
-                this._parent(0)._children(ch_idx) = ch
+                var tmp_children_list = this._parent(0)._children.clone()
+                tmp_children_list(ch_idx) = ch
+                this._parent(0)._children = tmp_children_list
               }
             }
             // update final boolean result
@@ -5705,7 +5668,7 @@ class SQL2FPGA_QPlan {
     var q_node = Queue[SQL2FPGA_QPlan]()
     q_node.enqueue(rootNode)
 
-    while(!q_node.isEmpty) {
+    while(q_node.nonEmpty) {
       var this_node = q_node.dequeue()
       // update linking
       for (ch <- this_node._children) {
@@ -5733,15 +5696,171 @@ class SQL2FPGA_QPlan {
       return
     }
     var sf = qConfig.scale_factor
-    // Temp Hack Alec
-    if (_nodeType.contains("JOIN") && _treeDepth == 3 && queryNum == 3 && _cpuORfpga == 1) {
-      _numTableRow = 150000
-    } else if (_nodeType.contains("JOIN") && _treeDepth == 2 && queryNum == 3 && _cpuORfpga == 1) {
-      _numTableRow = 30000
-    } else if (_nodeType.contains("Aggregate") && _treeDepth == 1 && queryNum == 3 && _cpuORfpga == 1) {
-      _numTableRow = 24000
-    } else if (_nodeType.contains("Aggregate") && _treeDepth == 1 && queryNum == 1 && _cpuORfpga == 1) {
-      _numTableRow = 10
+    // Temp Hack Alec - tag:output_table_nrow
+    queryNum match {
+      case 1 =>
+        if (_nodeType == "Aggregate" && _treeDepth == 1 && _cpuORfpga == 1) {
+          _numTableRow = 10
+        }
+      case 2 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 7 && _cpuORfpga == 1) {
+          _numTableRow = 5
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 8 && _cpuORfpga == 1) {
+          _numTableRow = 2036
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 9 && _cpuORfpga == 1) {
+          _numTableRow = 162880
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 5 && _cpuORfpga == 1) {
+          _numTableRow = 628
+        }
+      case 3 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 3 && _cpuORfpga == 1) {
+          _numTableRow = 150000
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 2 && _cpuORfpga == 1) {
+          _numTableRow = 30000
+        } else if (_nodeType == "Aggregate" && _treeDepth == 1 && _cpuORfpga == 1) {
+          _numTableRow = 24000
+        }
+      case 4 =>
+        if (_nodeType == "JOIN_LEFTSEMI" && _treeDepth == 2 && _cpuORfpga == 1) {
+          _numTableRow = 53000
+        }
+      case 5 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 2 && _cpuORfpga == 1) {
+          _numTableRow = 7500
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 3 && _cpuORfpga == 1) {
+          _numTableRow = 37000
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 4 && _cpuORfpga == 1) {
+          _numTableRow = 37000
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 5 && _cpuORfpga == 1) {
+          _numTableRow = 909000
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 6 && _cpuORfpga == 1) {
+          _numTableRow = 227000
+        }
+      case 6 => // N/A
+      case 7 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 4 && _cpuORfpga == 1) {
+          _numTableRow = 153500
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 5 && _cpuORfpga == 1) {
+          _numTableRow = 153500
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 6 && _cpuORfpga == 1) {
+          _numTableRow = 153500
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 7 && _cpuORfpga == 1) {
+          _numTableRow = 1829000
+        }
+      case 8 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 3 && _cpuORfpga == 1) {
+          _numTableRow = 2539
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 4 && _cpuORfpga == 1) {
+          _numTableRow = 2539
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 5 && _cpuORfpga == 1) {
+          _numTableRow = 12215
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 6 && _cpuORfpga == 1) {
+          _numTableRow = 12215
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 7 && _cpuORfpga == 1) {
+          _numTableRow = 12215
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 8 && _cpuORfpga == 1) {
+          _numTableRow = 39720
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 9 && _cpuORfpga == 1) {
+          _numTableRow = 39720
+        }
+      case 9 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 4 && _cpuORfpga == 1) {
+          _numTableRow = 319287
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 5 && _cpuORfpga == 1) {
+          _numTableRow = 319287
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 6 && _cpuORfpga == 1) {
+          _numTableRow = 319287
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 7 && _cpuORfpga == 1) {
+          _numTableRow = 319287
+        }
+      case 10 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 2 && _cpuORfpga == 1) {
+          _numTableRow = 114347
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 3 && _cpuORfpga == 1) {
+          _numTableRow = 114347
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 4 && _cpuORfpga == 1) {
+          _numTableRow = 57111
+        }
+      case 11 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 3 && _cpuORfpga == 1) {
+          _numTableRow = 393
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 4 && _cpuORfpga == 1) {
+          _numTableRow = 31440
+        } else if (_nodeType == "Aggregate" && _treeDepth == 2 && _cpuORfpga == 1) {
+          _numTableRow = 60000
+        }
+      case 12 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 2 && _cpuORfpga == 1) {
+          _numTableRow = 31211
+        }
+      case 13 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 0 && _cpuORfpga == 1) {
+          _numTableRow = 1480133
+        } else if (_nodeType == "JOIN_LEFTANTI" && _treeDepth == 3 && _cpuORfpga == 1) {
+          _numTableRow = 1531000
+        }
+      case 14 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 1 && _cpuORfpga == 1) {
+          _numTableRow = 78000
+        }
+      case 15 =>
+      case 16 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 2 && _cpuORfpga == 1) {
+          _numTableRow = 120789
+        } else if (_nodeType == "JOIN_LEFTANTI" && _treeDepth == 3 && _cpuORfpga == 1) {
+          _numTableRow = 799680
+        }
+      case 17 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 2 && _cpuORfpga == 1) {
+          _numTableRow = 1507
+        }
+      case 18 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 2 && _cpuORfpga == 1) {
+          _numTableRow = 100
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 3 && _cpuORfpga == 1) {
+          _numTableRow = 100
+        } else if (_nodeType == "JOIN_LEFTSEMI" && _treeDepth == 3 && _cpuORfpga == 1) {
+          _numTableRow = 100
+        } else if (_nodeType == "JOIN_LEFTSEMI" && _treeDepth == 4 && _cpuORfpga == 1) {
+          _numTableRow = 100
+        } else if (_nodeType == "Aggregate" && _treeDepth == 6 && _cpuORfpga == 1) {
+          _numTableRow = 3000000
+        } else if (_nodeType == "Aggregate" && _treeDepth == 6 && _cpuORfpga == 1) {
+          _numTableRow = 3000000
+        }
+      case 19 =>
+      case 20 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 1 && _cpuORfpga == 1) {
+          _numTableRow = 210
+        } else if (_nodeType == "JOIN_LEFTSEMI" && _treeDepth == 2 && _cpuORfpga == 1) {
+          _numTableRow = 5366
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 3 && _cpuORfpga == 1) {
+          _numTableRow = 7670
+        } else if (_nodeType == "JOIN_LEFTSEMI" && _treeDepth == 4 && _cpuORfpga == 1) {
+          _numTableRow = 11160
+        } else if (_nodeType == "Aggregate" && _treeDepth == 5 && _cpuORfpga == 1) {
+          _numTableRow = 15000
+        } else if (_nodeType == "JOIN_LEFTSEMI" && _treeDepth == 6 && _cpuORfpga == 1) {
+          _numTableRow = 12816
+        }
+      case 21 =>
+        if (_nodeType == "JOIN_INNER" && _treeDepth == 2 && _cpuORfpga == 1) {
+          _numTableRow = 25255
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 3 && _cpuORfpga == 1) {
+          _numTableRow = 377
+        } else if (_nodeType == "JOIN_INNER" && _treeDepth == 4 && _cpuORfpga == 1) {
+          _numTableRow = 52212
+        } else if (_nodeType == "JOIN_LEFTANTI" && _treeDepth == 5 && _cpuORfpga == 1) {
+          _numTableRow = 1375555
+        } else if (_nodeType == "JOIN_LEFTSEMI" && _treeDepth == 6 && _cpuORfpga == 1) {
+          _numTableRow = 2417632
+        } else if (_nodeType == "JOIN_LEFTSEMI" && _treeDepth == 7 && _cpuORfpga == 1) {
+          _numTableRow = 2844584
+        }
+      case 22 =>
+        if (_nodeType == "JOIN_LEFTANTI" && _treeDepth == 3 && _cpuORfpga == 1) {
+          _numTableRow = 6283
+        }
     }
 
     //-----------------------------------Node Operation Name------------------------------------------
@@ -6100,16 +6219,16 @@ class SQL2FPGA_QPlan {
           else {
             //join operators
             var largerLeftTbl = false
-            if (leftmost_operator._children.head._nodeType == "SERIALIZE_FROM_OBJECT" && rightmost_operator._children.last._nodeType == "SERIALIZE_FROM_OBJECT") {
+            if (leftmost_operator._children.head._nodeType == "SerializeFromObject" && rightmost_operator._children.last._nodeType == "SerializeFromObject") {
               if (leftmost_operator._children.head._numTableRow > rightmost_operator._children.last._numTableRow) {
                 largerLeftTbl = true
               }
             }
             //              // table order swapping based on number of rows to reduce hashmap creation size
             //              if (join_operator._nodeType == "JOIN_INNER") {
-            //                if ((leftmost_operator._children.head._nodeType == "SERIALIZE_FROM_OBJECT" && leftmost_operator._children.head._numTableRow >= 150000 && rightmost_operator._children.last._nodeType != "SERIALIZE_FROM_OBJECT") ||
+            //                if ((leftmost_operator._children.head._nodeType == "SerializeFromObject" && leftmost_operator._children.head._numTableRow >= 150000 && rightmost_operator._children.last._nodeType != "SerializeFromObject") ||
             //                  (leftmost_operator._children.head._nodeType.contains("JOIN") && rightmost_operator._children.last._nodeType == "Filter") ||
-            //                  (rightmost_operator._children.last._nodeType == "SERIALIZE_FROM_OBJECT" && rightmost_operator._children.last._numTableRow < 150000) ||
+            //                  (rightmost_operator._children.last._nodeType == "SerializeFromObject" && rightmost_operator._children.last._numTableRow < 150000) ||
             //                  largerLeftTbl) {
             //                  var temp_operator = rightmost_operator
             //                  rightmost_operator = leftmost_operator
@@ -6121,7 +6240,7 @@ class SQL2FPGA_QPlan {
             //                }
             //              }
 
-            // Alec hack
+            // Alec hack - tag:inner_join_order
             // if ( // 632
             if ((queryNum == 1 && (join_operator._treeDepth == 4 || join_operator._treeDepth == 3 || join_operator._treeDepth == 2) && join_operator._nodeType == "JOIN_INNER") ||
               (queryNum == 2 && (join_operator._treeDepth == 5 || join_operator._treeDepth == 4) && join_operator._nodeType == "JOIN_INNER") ||
@@ -6130,8 +6249,8 @@ class SQL2FPGA_QPlan {
               // if ((queryNum == 2 && join_operator._treeDepth == 9 && join_operator._nodeType == "JOIN_INNER") || // 558
               // if ((queryNum == 2 && join_operator._treeDepth == 7 && join_operator._treeDepth == 8 && join_operator._treeDepth == 9 && join_operator._nodeType == "JOIN_INNER") || //632
               (queryNum == 3 && join_operator._treeDepth == 2 && join_operator._nodeType == "JOIN_INNER") || // 255, without is better => 103 ms
-              //                 (queryNum == 5 && (join_operator._treeDepth == 2 || join_operator._treeDepth == 3 || join_operator._treeDepth == 4) && join_operator._nodeType == "JOIN_INNER") ||
-              (queryNum == 5 && (join_operator._treeDepth == 8) && join_operator._nodeType == "JOIN_INNER") || // TPCDS
+              (queryNum == 5 && (join_operator._treeDepth == 2 || join_operator._treeDepth == 3 || join_operator._treeDepth == 4) && join_operator._nodeType == "JOIN_INNER") || //TPCH
+              // (queryNum == 5 && (join_operator._treeDepth == 8) && join_operator._nodeType == "JOIN_INNER") || // TPCDS
               (queryNum == 4 && (join_operator._treeDepth == 5 || join_operator._treeDepth == 3) && join_operator._nodeType == "JOIN_INNER") || // TPCDS
               (queryNum == 6 && (join_operator._treeDepth == 5) && join_operator._nodeType == "JOIN_INNER") || // TPCDS
               (queryNum == 7 && (join_operator._treeDepth == 3 || join_operator._treeDepth == 4 || join_operator._treeDepth == 6) && join_operator._nodeType == "JOIN_INNER") ||
@@ -6174,8 +6293,8 @@ class SQL2FPGA_QPlan {
 
           var nodeCfgCmd_part = "cfg_" + nodeOpName + "_cmds_part"
           if (sf == 30) {
-            if ((leftmost_operator._children.last._cpuORfpga == 0 || leftmost_operator._children.last._nodeType == "SERIALIZE_FROM_OBJECT") ||
-              (rightmost_operator._children.head._cpuORfpga == 0 || rightmost_operator._children.head._nodeType == "SERIALIZE_FROM_OBJECT")){
+            if ((leftmost_operator._children.last._cpuORfpga == 0 || leftmost_operator._children.last._nodeType == "SerializeFromObject") ||
+              (rightmost_operator._children.head._cpuORfpga == 0 || rightmost_operator._children.head._nodeType == "SerializeFromObject")){
               _fpgaConfigCode += "cfgCmd " + nodeCfgCmd_part + ";"
               _fpgaConfigCode += nodeCfgCmd_part + ".allocateHost();"
               _fpgaConfigCode += nodeGetCfgFuncName + "_part" + " (" + nodeCfgCmd_part + ".cmd);"
@@ -6957,26 +7076,26 @@ class SQL2FPGA_QPlan {
           var kernel_name_right = ""
           if (sf == 30) {
             if (joinTblOrderSwapped == false) {
-              if (leftmost_operator._children.head._cpuORfpga == 0 || leftmost_operator._children.head._nodeType == "SERIALIZE_FROM_OBJECT") {
+              if (leftmost_operator._children.head._cpuORfpga == 0 || leftmost_operator._children.head._nodeType == "SerializeFromObject") {
                 kernel_name_left = "krnl_" + nodeOpName + "_part_left"
                 _fpgaKernelSetupCode += "krnlEngine " + kernel_name_left + ";"
                 _fpgaKernelSetupCode += kernel_name_left + " = krnlEngine(program_h, q_h, \"gqePart\");"
                 _fpgaKernelSetupCode += kernel_name_left + ".setup_hp(512, 0, power_of_hpTimes_join, " + join_left_table_name + ", " + join_left_table_name + "_partition" + ", " + nodeCfgCmd_part +");"
               }
-              if (_children.length > 1 && (rightmost_operator._children.last._cpuORfpga == 0 || rightmost_operator._children.last._nodeType == "SERIALIZE_FROM_OBJECT")) {
+              if (_children.length > 1 && (rightmost_operator._children.last._cpuORfpga == 0 || rightmost_operator._children.last._nodeType == "SerializeFromObject")) {
                 kernel_name_right = "krnl_" + nodeOpName + "_part_right"
                 _fpgaKernelSetupCode += "krnlEngine " + kernel_name_right + ";"
                 _fpgaKernelSetupCode += kernel_name_right + " = krnlEngine(program_h, q_h, \"gqePart\");"
                 _fpgaKernelSetupCode += kernel_name_right + ".setup_hp(512, 1, power_of_hpTimes_join, " + join_right_table_name + ", " + join_right_table_name + "_partition" + ", " + nodeCfgCmd_part +");"
               }
             } else {
-              if (leftmost_operator._children.last._cpuORfpga == 0 || leftmost_operator._children.last._nodeType == "SERIALIZE_FROM_OBJECT") {
+              if (leftmost_operator._children.last._cpuORfpga == 0 || leftmost_operator._children.last._nodeType == "SerializeFromObject") {
                 kernel_name_left = "krnl_" + nodeOpName + "_part_left"
                 _fpgaKernelSetupCode += "krnlEngine " + kernel_name_left + ";"
                 _fpgaKernelSetupCode += kernel_name_left + " = krnlEngine(program_h, q_h, \"gqePart\");"
                 _fpgaKernelSetupCode += kernel_name_left + ".setup_hp(512, 0, power_of_hpTimes_join, " + join_left_table_name + ", " + join_left_table_name + "_partition" + ", " + nodeCfgCmd_part +");"
               }
-              if (_children.length > 1 && (rightmost_operator._children.head._cpuORfpga == 0 || rightmost_operator._children.head._nodeType == "SERIALIZE_FROM_OBJECT")) {
+              if (_children.length > 1 && (rightmost_operator._children.head._cpuORfpga == 0 || rightmost_operator._children.head._nodeType == "SerializeFromObject")) {
                 kernel_name_right = "krnl_" + nodeOpName + "_part_right"
                 _fpgaKernelSetupCode += "krnlEngine " + kernel_name_right + ";"
                 _fpgaKernelSetupCode += kernel_name_right + " = krnlEngine(program_h, q_h, \"gqePart\");"
@@ -7049,10 +7168,10 @@ class SQL2FPGA_QPlan {
           _fpgaKernelEventsCode += d2h_rd_name + ".resize(1);"
           if (sf == 30) {
             var num_gqe_part_events = 0
-            if (leftmost_operator._children.last._cpuORfpga == 0 || leftmost_operator._children.last._nodeType == "SERIALIZE_FROM_OBJECT") {
+            if (leftmost_operator._children.last._cpuORfpga == 0 || leftmost_operator._children.last._nodeType == "SerializeFromObject") {
               num_gqe_part_events += 1
             }
-            if (_children.length > 1 && (rightmost_operator._children.head._cpuORfpga == 0 || rightmost_operator._children.head._nodeType == "SERIALIZE_FROM_OBJECT")) {
+            if (_children.length > 1 && (rightmost_operator._children.head._cpuORfpga == 0 || rightmost_operator._children.head._nodeType == "SerializeFromObject")) {
               num_gqe_part_events += 1
             }
             _fpgaKernelEventsCode += events_name + "[0].resize(" + num_gqe_part_events.toString + ");"
@@ -7092,19 +7211,19 @@ class SQL2FPGA_QPlan {
           if (sf == 30) {
             var num_gqe_part_events = 0
             if (joinTblOrderSwapped == false) {
-              if (leftmost_operator._children.head._cpuORfpga == 0 || leftmost_operator._children.head._nodeType == "SERIALIZE_FROM_OBJECT") {
+              if (leftmost_operator._children.head._cpuORfpga == 0 || leftmost_operator._children.head._nodeType == "SerializeFromObject") {
                 _fpgaKernelRunCode += kernel_name_left + ".run(0, &(" + events_grp_name + "), &(" + _fpgaEventsName + "[0][" + num_gqe_part_events.toString + "]));"
                 num_gqe_part_events += 1
               }
-              if (_children.length > 1 && (rightmost_operator._children.last._cpuORfpga == 0 || rightmost_operator._children.last._nodeType == "SERIALIZE_FROM_OBJECT")) {
+              if (_children.length > 1 && (rightmost_operator._children.last._cpuORfpga == 0 || rightmost_operator._children.last._nodeType == "SerializeFromObject")) {
                 _fpgaKernelRunCode += kernel_name_right + ".run(0, &(" + events_grp_name + "), &(" + _fpgaEventsName + "[0][" + num_gqe_part_events.toString + "]));"
               }
             } else {
-              if (leftmost_operator._children.last._cpuORfpga == 0 || leftmost_operator._children.last._nodeType == "SERIALIZE_FROM_OBJECT") {
+              if (leftmost_operator._children.last._cpuORfpga == 0 || leftmost_operator._children.last._nodeType == "SerializeFromObject") {
                 _fpgaKernelRunCode += kernel_name_left + ".run(0, &(" + events_grp_name + "), &(" + _fpgaEventsName + "[0][" + num_gqe_part_events.toString + "]));"
                 num_gqe_part_events += 1
               }
-              if (_children.length > 1 && (rightmost_operator._children.head._cpuORfpga == 0 || rightmost_operator._children.head._nodeType == "SERIALIZE_FROM_OBJECT")) {
+              if (_children.length > 1 && (rightmost_operator._children.head._cpuORfpga == 0 || rightmost_operator._children.head._nodeType == "SerializeFromObject")) {
                 _fpgaKernelRunCode += kernel_name_right + ".run(0, &(" + events_grp_name + "), &(" + _fpgaEventsName + "[0][" + num_gqe_part_events.toString + "]));"
               }
             }
@@ -7244,7 +7363,7 @@ class SQL2FPGA_QPlan {
           var input_table_name = innerMostOperator._children.head._fpgaOutputTableName
           var nodeCfgCmd_part = "cfg_" + nodeOpName + "_cmds_part"
           if (sf == 30) {
-            if (innerMostOperator._children.head._cpuORfpga == 0 || innerMostOperator._children.head._nodeType == "SERIALIZE_FROM_OBJECT"){
+            if (innerMostOperator._children.head._cpuORfpga == 0 || innerMostOperator._children.head._nodeType == "SerializeFromObject"){
               _fpgaConfigCode += "cfgCmd " + nodeCfgCmd_part + ";"
               _fpgaConfigCode += nodeCfgCmd_part + ".allocateHost();"
               _fpgaConfigCode += nodeGetCfgFuncName + "_part" + " (" + nodeCfgCmd_part + ".cmd);"
@@ -7255,6 +7374,15 @@ class SQL2FPGA_QPlan {
           cfgFuncCode += "    // StringRowIDSubstitution: " + _stringRowIDSubstitution + " StringRowIDBackSubstitution: " + _stringRowIDBackSubstitution
           cfgFuncCode += "    // Supported operation: " + _nodeType
           cfgFuncCode += "    // Operation: " + _operation
+          for (binded_overlay <- _bindedOverlayInstances) {
+            cfgFuncCode += "        // Binded Operation: " + binded_overlay._nodeType + " -> operations: " + binded_overlay._operation
+          }
+          for (binded_overlay <- _bindedOverlayInstances_left) {
+            cfgFuncCode += "        // Binded Operation: " + binded_overlay._nodeType + " -> operations: " + binded_overlay._operation
+          }
+          for (binded_overlay <- _bindedOverlayInstances_right) {
+            cfgFuncCode += "        // Binded Operation: " + binded_overlay._nodeType + " -> operations: " + binded_overlay._operation
+          }
           cfgFuncCode += "    // Input Table: " + input_table_col
           cfgFuncCode += "    // Output Table: " + _outputCols
           cfgFuncCode += "    // Node Depth: " + _treeDepth
@@ -7866,7 +7994,7 @@ class SQL2FPGA_QPlan {
           var kernel_name = ""
           var partition_kernel_name = ""
           if (sf == 30) {
-            // if (innerMostOperator._children.head._cpuORfpga == 0 || innerMostOperator._children.head._nodeType == "SERIALIZE_FROM_OBJECT") {
+            // if (innerMostOperator._children.head._cpuORfpga == 0 || innerMostOperator._children.head._nodeType == "SerializeFromObject") {
             // }
             partition_kernel_name = "krnl_" + nodeOpName + "_part"
             _fpgaKernelSetupCode += "AggrKrnlEngine " + partition_kernel_name + ";"
@@ -8267,7 +8395,7 @@ class SQL2FPGA_QPlan {
         var overlay_type = -1 // 0 - gqeJoin, 1 - gqeAggr
         for (ch <- _children){
           if (sf == 30) {
-            if (ch._cpuORfpga == 1 && ch._nodeType != "SERIALIZE_FROM_OBJECT") {
+            if (ch._cpuORfpga == 1 && ch._nodeType != "SerializeFromObject") {
               contains_partitioned_tbl = true
               overlay_type = ch._fpgaOverlayType
               if (overlay_type == 1) {
@@ -8311,7 +8439,7 @@ class SQL2FPGA_QPlan {
             // tag:innerjoin
             var tempStr = "void " + _fpgaSWFuncName + "("
             for (ch <- _children) {
-              if (sf == 30 && ch._cpuORfpga == 1 && ch._nodeType != "SERIALIZE_FROM_OBJECT") {
+              if (sf == 30 && ch._cpuORfpga == 1 && ch._nodeType != "SerializeFromObject") {
                 tempStr += "Table *" + ch.fpgaOutputTableName + ", "
               } else {
                 tempStr += "Table &" + ch.fpgaOutputTableName + ", "
@@ -8323,7 +8451,7 @@ class SQL2FPGA_QPlan {
                 tempStr += "Table &" + orig_tbl + ", "
               }
             }
-            if (sf == 30 && ((_children.head._cpuORfpga == 1 && _children.head._nodeType != "SERIALIZE_FROM_OBJECT") || (_children.last._cpuORfpga == 1 && _children.last._nodeType != "SERIALIZE_FROM_OBJECT"))) {
+            if (sf == 30 && ((_children.head._cpuORfpga == 1 && _children.head._nodeType != "SerializeFromObject") || (_children.last._cpuORfpga == 1 && _children.last._nodeType != "SerializeFromObject"))) {
               tempStr += "Table &" + _fpgaOutputTableName + ", int hpTimes) {"
             } else {
               tempStr += "Table &" + _fpgaOutputTableName + ") {"
@@ -8352,12 +8480,12 @@ class SQL2FPGA_QPlan {
             _fpgaSWFuncCode += "    // Right Table: " + join_right_table_col
             _fpgaSWFuncCode += "    // Output Table: " + _outputCols
             // ----------------------------------- Debug info -----------------------------------
-            if (sf == 30 && _children.head._cpuORfpga == 1 && _children.head._nodeType != "SERIALIZE_FROM_OBJECT") {
+            if (sf == 30 && _children.head._cpuORfpga == 1 && _children.head._nodeType != "SerializeFromObject") {
               _fpgaSWFuncCode += "    int left_nrow = " + tbl_in_1 + "[0].getNumRow();"
             } else {
               _fpgaSWFuncCode += "    int left_nrow = " + tbl_in_1 + ".getNumRow();"
             }
-            if (sf == 30 && _children.last._cpuORfpga == 1 && _children.last._nodeType != "SERIALIZE_FROM_OBJECT") {
+            if (sf == 30 && _children.last._cpuORfpga == 1 && _children.last._nodeType != "SerializeFromObject") {
               _fpgaSWFuncCode += "    int right_nrow = " + tbl_in_2 + "[0].getNumRow();"
             } else {
               _fpgaSWFuncCode += "    int right_nrow = " + tbl_in_2 + ".getNumRow();"
@@ -8413,21 +8541,6 @@ class SQL2FPGA_QPlan {
             // ----------------------------------- Debug info -----------------------------------
             _fpgaSWFuncCode += "    int left_nrow = " + tbl_in_1 + ".getNumRow();"
             _fpgaSWFuncCode += "    int right_nrow = " + tbl_in_2 + ".getNumRow();"
-            //              var join_clauses = getJoinKeyTerms(this.joining_expression(0), false)
-            //              var isSpecialSemiJoin = join_clauses.length == 2 && ((join_clauses(0).contains("!=") && !join_clauses(1).contains("!=")) || (!join_clauses(0).contains("!=") && join_clauses(1).contains("!=")))
-            //              // _fpgaSWFuncCode += "    if (left_nrow < right_nrow" + " && (" + !isSpecialSemiJoin + ")" + ") { "
-            //              // temp hack - defaulting back to original antijoin implementation - Q22
-            //               _fpgaSWFuncCode += "    if (left_nrow < right_nrow" + " && (false)" + ") { "
-            //              var antiJoin_leftMajor_code = genAntiJoin_leftMajor_core(this, dfmap, leftTableKeyColNames_leftMajor, rightTableKeyColNames_leftMajor, leftTablePayloadColNames_leftMajor, rightTablePayloadColNames_leftMajor, joinKeyTypeName_leftMajor, joinPayloadTypeName_leftMajor)
-            //              for (line <- antiJoin_leftMajor_code) {
-            //                _fpgaSWFuncCode += "    " + line
-            //              }
-            //              _fpgaSWFuncCode += "    } else { "
-            //              var antiJoin_rightMajor_code = genAntiJoin_rightMajor_core(this, dfmap, leftTableKeyColNames_rightMajor, rightTableKeyColNames_rightMajor, leftTablePayloadColNames_rightMajor, rightTablePayloadColNames_rightMajor, joinKeyTypeName_rightMajor, joinPayloadTypeName_rightMajor)
-            //              for (line <- antiJoin_rightMajor_code) {
-            //                _fpgaSWFuncCode += "    " + line
-            //              }
-            //              _fpgaSWFuncCode += "    } "
             var antiJoin_rightMajor_code = genAntiJoin_rightMajor_core(this, dfmap, leftTableKeyColNames_rightMajor, rightTableKeyColNames_rightMajor, leftTablePayloadColNames_rightMajor, rightTablePayloadColNames_rightMajor, joinKeyTypeName_rightMajor, joinPayloadTypeName_rightMajor)
             for (line <- antiJoin_rightMajor_code) {
               _fpgaSWFuncCode += "    " + line

@@ -61,9 +61,9 @@ git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
     * Build and Run SQL2FPGA Module
        * Build and run module `SQL2FPGA_Top`
     * Output:
-       * CPU Host Code: `test_q**##**.cpp` 
-       * FPGA Configuration Code: `cfgFunc_q**##**.hpp`
-       * SW Operator Function Code: `q**##**.hpp`
+       * CPU Host Code: `test_q##.cpp` 
+       * FPGA Configuration Code: `cfgFunc_q##.hpp`
+       * SW Operator Function Code: `q##.hpp`
 
 3. Build AMD-Xilinx's Database Accelerator Overlay Designs
     * Clone AMD-Xilinx's Vitis Libraries: 
