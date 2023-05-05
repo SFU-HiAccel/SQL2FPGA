@@ -1,6 +1,6 @@
 # SQL2FPGA: Automatic Acceleration of SQL Query Processing on Modern CPU-FPGA Platforms
 
-This repository includes the code for SQL2FPGA. SQL2FPGA is a hardware-aware SQL query compilation framwork for translating and efficiently mapping SQL queries on the modern heterogeneous CPU-FPGA platforms. SQL2FPGA takes the optimized query execution plans of SQL queries from big data query processing engines; performs hardware-aware optimizations to map query operations to FPGA accelerators; and lastly generates the deployable CPU host code and the associated FPGA accelerator configuration code. 
+This repository includes the code for SQL2FPGA. SQL2FPGA is a hardware-aware SQL query compilation framwork for translating and efficiently mapping SQL queries on the modern heterogeneous CPU-FPGA platforms. SQL2FPGA takes the optimized query execution plans of SQL queries from big data query processing engines (Spark SQL for now); performs hardware-aware optimizations to map query operations to FPGA accelerators (AMD/Xilinx Vitis database overlays for now); and lastly generates the deployable CPU host code and the associated FPGA accelerator configuration code. 
 
 If you find this project useful in your research, please consider citing:
 
