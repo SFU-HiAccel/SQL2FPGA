@@ -85,7 +85,7 @@ git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
         
 4. Run SQL2FPGA-generated Designs on Device
     * Replace `makefile` at `/Vitis_Libraries/database/L2/demos` with the  `<$SQL2FPGA_HOME>/makefile`
-    * Move SQL2FPGA generated code to `/Vitis_Libraries/database/L2/demos/host/q##/ssql2fpga_fpga`
+    * Move SQL2FPGA generated code to `/Vitis_Libraries/database/L2/demos/host/q##/sfsql2fpga_fpga`
     * Compile and execute the design at `/Vitis_Libraries/database/L2/demos`
         ```
         make clean
