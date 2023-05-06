@@ -40,7 +40,7 @@ class SQL2FPGA_Codegen {
     bw.write("#include \"table_dt.hpp\" \n")
     bw.write("#include \"utils.hpp\" \n")
     bw.write("#include \"tpch_read_2.hpp\" \n")
-    bw.write("#include \"tpcds_read.hpp\" \n")
+//    bw.write("#include \"tpcds_read.hpp\" \n")
     bw.write("#include \"gqe_api.hpp\" \n")
     bw.write("\n")
     bw.write("#include \"cfgFunc_q" + queryNo + ".hpp\" \n")
