@@ -37,12 +37,13 @@ git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
     * Install `Scala` plugin
     * Open project ...
     * Select `pom.xml` project file
+    * Select Scala version to match 2.13
     * Build module `SQL2FPGA_Top`
 
 2. Run SQL2FPGA Project on TPC-H Dataset
     * Download TPC-H Benchmark Generator
         ```
-        https://github.com/electrum/tpch-dbgen.git
+        git clone https://github.com/electrum/tpch-dbgen.git
         ```
     * Generate TPC-H Dataset (our evaluation covers SF1 and SF30)
         ```
@@ -77,18 +78,18 @@ git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
         ```
     * Build gqeJoin and gqeAggr accelerator overlay designs (this will take more than 10 hours to finish)
         ```
-        cd database/L2/demo
-        make -C build_join_partition/ xclbin DEVICE=xilinx_u280_xdma_201920_3
-        make -C build_aggr_partition/ xclbin DEVICE=xilinx_u280_xdma_201920_3
+        cd database/L2/demos
+        make -C build_join_partition/ TARGET=hw xclbin DEVICE=xilinx_u280_xdma_201920_3
+        make -C build_aggr_partition/ TARGET=hw xclbin DEVICE=xilinx_u280_xdma_201920_3
         ```
         
 4. Run SQL2FPGA-generated Designs on Device
     * Replace `makefile` at `/Vitis_Libraries/database/L2/demos` with the  `<$SQL2FPGA_HOME>/makefile`
-    * Move SQL2FPGA generated code to `/Vitis_Libraries/database/L2/demos/host/q##/sfalec_fpga`
+    * Move SQL2FPGA generated code to `/Vitis_Libraries/database/L2/demos/host/q##/ssql2fpga_fpga`
     * Compile and execute the design at `/Vitis_Libraries/database/L2/demos`
         ```
         make clean
-        make run TARGET=hw MODE=FPGA TB=Q## DEVICE=xilinx_u280_xdma_201920_3 TEST=ALEC
+        make run TARGET=hw MODE=FPGA TB=Q## DEVICE=xilinx_u280_xdma_201920_3 TEST=SQL2FPGA
         ```
 
 Now you have compeletd the entire tool flow of SQL2FPGA. Hack the code and have fun!
