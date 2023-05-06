@@ -100,22 +100,22 @@ ifeq ($(MODE),CPU)
   # TB_DIR = cpu
   ifeq ($(TEST),XILINX)
     TB_DIR = cpu
-  else ifeq ($(TEST),ALEC)
-    TB_DIR = sfalec_cpu
+  else ifeq ($(TEST),SQL2FPGA)
+    TB_DIR = ssql2fpga_cpu
   endif
 else ifeq ($(MODE),FPGA)
 ifeq ($(SF),1)
   ifeq ($(TEST),XILINX)
     TB_DIR = sf1_fpga
-  else ifeq ($(TEST),ALEC)
-    TB_DIR = sfalec_fpga
+  else ifeq ($(TEST),SQL2FPGA)
+    TB_DIR = ssql2fpga_fpga
   endif
 else ifeq ($(SF),30)
   ifeq ($(TEST),XILINX)
     # TB_DIR = sf1_fpga
     TB_DIR = sf30_fpga
-  else ifeq ($(TEST),ALEC)
-    TB_DIR = sfalec_fpga
+  else ifeq ($(TEST),SQL2FPGA)
+    TB_DIR = ssql2fpga_fpga
   endif
 else
   $(error Scale factor other than 1 and 30 is not supported in host code)
