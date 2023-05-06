@@ -57,7 +57,7 @@ git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
         * Query Specifications
             * Modify `qConfig.tpch_queryNum_start` and `qConfig.tpch_queryNum_end` to specifiy the range of queries to generate code
         * Execution Mode
-            * `qConfig.pure_sw_mode = 0` specifies whether all operators are executed on CPU and `qConfig.pure_sw_mode = 1` indicates a hybrid execution mode where both CPU and FPGA accelerators are used for execution 
+            * `qConfig.pure_sw_mode = 1` indicates all operators are executed on CPU and `qConfig.pure_sw_mode = 0` indicates a hybrid execution mode where both CPU and FPGA accelerators are used for execution 
             * `qConfig.scale_factor = 1` specifies the scale factor (SF)
     * Build and Run SQL2FPGA Module
        * Build and run module `SQL2FPGA_Top`
@@ -85,11 +85,11 @@ git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
         
 4. Run SQL2FPGA-generated Designs on Device
     * Replace `makefile` at `/Vitis_Libraries/database/L2/demos` with the  `<$SQL2FPGA_HOME>/makefile`
-    * Move SQL2FPGA generated code to `/Vitis_Libraries/database/L2/demos/host/q##/sfsql2fpga_fpga`
+    * Move SQL2FPGA generated code to `/Vitis_Libraries/database/L2/demos/host/q#/sfsql2fpga_fpga`
     * Compile and execute the design at `/Vitis_Libraries/database/L2/demos`
         ```
         make clean
-        make run TARGET=hw MODE=FPGA TB=Q## DEVICE=xilinx_u280_xdma_201920_3 TEST=SQL2FPGA
+        make run TARGET=hw MODE=FPGA TB=Q# DEVICE=xilinx_u280_xdma_201920_3 TEST=SQL2FPGA
         ```
 
 Now you have compeletd the entire tool flow of SQL2FPGA. Hack the code and have fun!
