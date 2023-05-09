@@ -94,6 +94,11 @@ git clone https://github.com/SFU-HiAccel/SQL2FPGA.git
 
 Now you have compeletd the entire tool flow of SQL2FPGA. Hack the code and have fun!
 
+## Known Limitations
+* Whether to use hash partition logic requires manual specification in SF30.
+* Device selection between CPU and FPGA overlay design is currently manually selected through empirical results.
+* Output table size required manual input to achieve the best CPU-to-FPGA memory transfer time.
+
 ## Authors and Contributors
 SQL2FPGA is currently maintained by [Alec Lu](http://www.sfu.ca/~fla30/).
 
